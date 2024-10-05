@@ -3,7 +3,6 @@
 
 #include <dirent.h>
 #include <glib.h>
-#include <locale.h>
 #include <readline/readline.h>
 #include <rime_api.h>
 #include <stdlib.h>
@@ -73,7 +72,7 @@ static RimeTraits get_traits() {
   g_mkdir_with_parents(traits.log_dir, 0755);
   traits.distribution_name = "Rime";
   traits.distribution_code_name = "rl_custom_rime";
-  traits.distribution_version = "0.0.1";
+  traits.distribution_version = rl_library_version;
   traits.app_name = "rime.rl_custom_rime";
   traits.min_log_level = 3;
   return traits;
@@ -82,12 +81,20 @@ static RimeTraits get_traits() {
 static void callback(char *left_padding, char *left, char *right,
                      char *left_padding2, char *str, char *cursor) {
   clear();
-  printf("\e[s\n%s%s%s%s\e[u\e[s\n\n"
-         "%s%s\e[u",
-         left_padding, left, cursor, right, left_padding2, str);
+  char padding[DEFAULT_BUFFER_SIZE] = "";
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  memset(padding, ' ',
+         RimeWidth(rl_copy_text(0, DEFAULT_BUFFER_SIZE)) % w.ws_col);
+  printf("\e[s\n%s%s%s%s%s\e[u\e[s\n\n"
+         "%s%s%s\e[u",
+         padding, left_padding, left, cursor, right, padding, left_padding2,
+         str);
 }
 
 static int feed_keys(const char *keys) {
+  if (RimeWidth((char *)keys) == -1)
+    return 0;
   int status = rl_insert_text(keys);
   rl_refresh_line(1, 0);
   return status;
@@ -97,7 +104,6 @@ int rl_custom_function(int count, int key) {
   static RimeSessionId session_id;
   if (session_id == 0) {
     RimeTraits traits = get_traits();
-    setlocale(LC_CTYPE, "");
     RimeSetup(&traits);
     RimeInitialize(&traits);
     session_id = RimeCreateSession();
