@@ -9,5 +9,6 @@ mkShell {
     xmake
     librime
     readline.dev
+    glib.dev
   ];
 }

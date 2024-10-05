@@ -62,6 +62,8 @@ xmake
 /usr/$LIB/librl_custom_function.so
 ```
 
+See [shell.nix](shell.nix).
+
 ## Configure
 
 ```readline
