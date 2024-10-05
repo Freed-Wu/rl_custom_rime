@@ -3,6 +3,7 @@
 add_rules("mode.debug", "mode.release")
 add_requires("rime")
 add_requires("readline")
+add_requires("glib")
 
 target("rl_custom_rime")
 do
@@ -12,6 +13,7 @@ do
     add_undefines("_XOPEN_SOURCE")
     add_packages("rime")
     add_packages("readline")
+    add_packages("glib")
     before_build(
         function(target)
             ---@diagnostic disable: undefined-field

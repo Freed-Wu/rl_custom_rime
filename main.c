@@ -1,13 +1,17 @@
 // readline miss FILE
 #include <stdio.h>
 
+#include <dirent.h>
+#include <glib.h>
 #include <locale.h>
 #include <readline/readline.h>
 #include <rime_api.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <wordexp.h>
 
 #include "tmux-rime/tmux-rime.h"
 
@@ -18,16 +22,55 @@ static void clear() {
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
   memset(str, ' ', w.ws_col);
-  printf("\e[s\r\n%s\r\n"
+  printf("\e[s\n%s\n"
          "%s\e[u",
          str, str);
 }
 
 static RimeTraits get_traits() {
   RIME_STRUCT(RimeTraits, traits);
+  wordexp_t exp;
+  char shared_data_dir[256] = "";
+  char *shared_data_dirs[] = {shared_data_dir, "/usr/local/share/rime-data",
+                              "/run/current-system/sw/share/rime-data",
+                              "/sdcard/rime-data"};
+  char *prefix = getenv("PREFIX");
+  if (prefix == NULL)
+    prefix = "/usr";
+  strcpy(shared_data_dirs[0], prefix);
+  strcpy(shared_data_dirs[0] + strlen(shared_data_dirs[0]), "/share/rime-data");
+  for (int i = 0; i < sizeof(shared_data_dirs) / sizeof(shared_data_dirs[0]);
+       i++) {
+    if (wordexp(shared_data_dirs[i], &exp, 0))
+      continue;
+    DIR *dir = opendir(exp.we_wordv[0]);
+    if (dir && closedir(dir) == 0) {
+      traits.shared_data_dir = strdup(exp.we_wordv[0]);
+      wordfree(&exp);
+      break;
+    }
+    wordfree(&exp);
+  }
   traits.shared_data_dir = "/usr/share/rime-data";
-  traits.user_data_dir = "/home/wzy/.config/ibus/rime";
-  traits.log_dir = "/home/wzy/.local/share/tmux/rime";
+
+  char *user_data_dirs[] = {"~/.config/ibus/rime", "~/.local/share/fcitx5/rime",
+                            "~/.config/fcitx/rime", "/sdcard/rime"};
+  for (int i = 0; i < sizeof(user_data_dirs) / sizeof(user_data_dirs[0]); i++) {
+    if (wordexp(user_data_dirs[i], &exp, 0))
+      continue;
+    DIR *dir = opendir(exp.we_wordv[0]);
+    if (dir && closedir(dir) == 0) {
+      traits.user_data_dir = strdup(exp.we_wordv[0]);
+      wordfree(&exp);
+      break;
+    }
+    wordfree(&exp);
+  }
+
+  if (wordexp("~/.local/share/tmux/rime", &exp, 0) != 0)
+    traits.log_dir = strdup(exp.we_wordv[0]);
+  wordfree(&exp);
+  g_mkdir_with_parents(traits.log_dir, 0755);
   traits.distribution_name = "Rime";
   traits.distribution_code_name = "rl_custom_rime";
   traits.distribution_version = "0.0.1";
@@ -39,9 +82,15 @@ static RimeTraits get_traits() {
 static void callback(char *left_padding, char *left, char *right,
                      char *left_padding2, char *str, char *cursor) {
   clear();
-  printf("\e[s\r\n%s%s%s%s\r\n"
+  printf("\e[s\n%s%s%s%s\e[u\e[s\n\n"
          "%s%s\e[u",
          left_padding, left, cursor, right, left_padding2, str);
+}
+
+static int feed_keys(const char *keys) {
+  int status = rl_insert_text(keys);
+  rl_refresh_line(1, 0);
+  return status;
 }
 
 int rl_custom_function(int count, int key) {
@@ -57,7 +106,7 @@ int rl_custom_function(int count, int key) {
   }
   RimeUI ui = {"<|", ">|", "[",
                "]",  "|",  {"①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⓪"}};
-  RimeLoop(session_id, ui, key, rl_insert_text, callback);
+  RimeLoop(session_id, ui, key, feed_keys, callback);
   RimeClearComposition(session_id);
   clear();
   return EXIT_SUCCESS;
