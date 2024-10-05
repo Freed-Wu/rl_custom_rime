@@ -26,9 +26,25 @@
 [![github/repo-size](https://shields.io/github/repo-size/Freed-Wu/rl_custom_rime)](https://github.com/Freed-Wu/rl_custom_rime)
 [![github/v](https://shields.io/github/v/release/Freed-Wu/rl_custom_rime)](https://github.com/Freed-Wu/rl_custom_rime)
 
-Rime for readline. For all programs depending on readline.
+Rime for readline. For all programs depending on readline:
+
+- bash without [ble.sh](https://github.com/akinomyoga/ble.sh)
+- python without ptpython, ipython, ...
+- tclsh/wish with [tclreadline](https://github.com/flightaware/tclreadline)
+- lua with [luaprompt](https://github.com/dpapavas/luaprompt)
+- perl with [reply](https://github.com/doy/reply)
+- [sdcv](https://github.com/Dushistov/sdcv)
+- ...
 
 ![screenshot](https://github.com/user-attachments/assets/88febfe0-3e32-48f6-a4c3-064759e16ca5)
+
+## Install
+
+### AUR
+
+```sh
+paru -S rl_custom_rime
+```
 
 ## Build
 
