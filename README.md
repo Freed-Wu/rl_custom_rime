@@ -71,6 +71,12 @@ $include function rl_custom_rime /the/path/of/librl_custom_rime.so
 "\C-^": rl_custom_rime
 ```
 
+## Todo
+
+<!-- markdownlint-disable-next-line MD033 -->
+- Support more special keys: <kbd>Up</kbd>, <kbd>Del</kbd>, <kbd>F1</kbd>, ...
+- Pass hotkeys to readline directly when menu is empty
+
 ## Related Projects
 
 - [rl_custom_isearch](https://github.com/lincheney/rl_custom_isearch)
