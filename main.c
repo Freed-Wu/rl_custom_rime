@@ -84,8 +84,12 @@ static void callback(char *left_padding, char *left, char *right,
   char padding[DEFAULT_BUFFER_SIZE] = "";
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  int extra_width = 0;
+  if (strcmp(rl_readline_name, "python") == 0)
+    extra_width += 2;
   memset(padding, ' ',
-         RimeWidth(rl_copy_text(0, DEFAULT_BUFFER_SIZE)) % w.ws_col);
+         (RimeWidth(rl_copy_text(0, DEFAULT_BUFFER_SIZE)) + extra_width) %
+             w.ws_col);
   printf("\e[s\n%s%s%s%s%s\e[u\e[s\n\n"
          "%s%s%s\e[u",
          padding, left_padding, left, cursor, right, padding, left_padding2,
