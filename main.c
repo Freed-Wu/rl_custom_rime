@@ -16,14 +16,15 @@
 
 #define DEFAULT_BUFFER_SIZE 1024
 
-static void clear() {
+static void clear(FILE *fp) {
   char str[DEFAULT_BUFFER_SIZE] = "";
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
   memset(str, ' ', w.ws_col);
-  printf("\e[s\n%s\n"
-         "%s\e[u",
-         str, str);
+  fprintf(fp,
+          "\e[s\n%s\n"
+          "%s\e[u",
+          str, str);
 }
 
 static RimeTraits get_traits() {
@@ -74,13 +75,13 @@ static RimeTraits get_traits() {
   traits.distribution_code_name = "rl_custom_rime";
   traits.distribution_version = rl_library_version;
   traits.app_name = "rime.rl_custom_rime";
-  traits.min_log_level = 3;
+  traits.min_log_level = 0;
   return traits;
 }
 
 static void callback(char *left_padding, char *left, char *right,
                      char *left_padding2, char *str, char *cursor) {
-  clear();
+  clear(stdout);
   char padding[DEFAULT_BUFFER_SIZE] = "";
   struct winsize w;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
@@ -108,9 +109,13 @@ int rl_custom_function(int count, int key) {
   static RimeSessionId session_id;
   if (session_id == 0) {
     RimeTraits traits = get_traits();
+    // don't let error message disturb input
+    fprintf(stderr, "\e[s\n");
     RimeSetup(&traits);
     RimeInitialize(&traits);
     session_id = RimeCreateSession();
+    fprintf(stderr, "\e[u");
+    /*clear(stderr);*/
     if (session_id == 0)
       fputs("cannot create session", stderr);
   }
@@ -118,6 +123,6 @@ int rl_custom_function(int count, int key) {
                "]",  "|",  {"①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⓪"}};
   RimeLoop(session_id, ui, key, feed_keys, callback);
   RimeClearComposition(session_id);
-  clear();
+  clear(stdout);
   return EXIT_SUCCESS;
 }
